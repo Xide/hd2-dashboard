@@ -1,0 +1,727 @@
+openapi: 3.1.0
+info:
+  title: Helldivers 2
+  description: |-
+    Reverse engineered contracts from the Helldivers 2 official API
+
+  version: 0.0.1
+servers:
+  - url: https://api.live.prod.thehelldiversgame.com/api
+tags: []
+paths:
+  /Stats/war/{war_id}/summary:
+    get:
+      parameters:
+        - description: The war ID
+          example: 801
+          in: path
+          name: war_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: War statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarStatistics'
+
+  /NewsFeed/{war_id}:
+    get:
+      parameters:
+        - description: The war ID
+          example: 801
+          in: path
+          name: war_id
+          required: true
+          schema:
+            type: integer
+        - description: Timestamp used for pagination, entries before will be ignored.
+          example: 0
+          in: query
+          name: fromTimestamp
+          schema:
+            type: integer
+        - description: Language for event messages
+          example: en-US
+          in: header
+          name: accept-language
+          schema:
+            type: string
+            format: iso-639-1
+            examples: ["en-US", "fr-FR"]
+
+      responses:
+        '200':
+          description: War season news feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsEntry'
+
+  /WarSeason/{war_id}/WarInfo:
+    get:
+      parameters:
+        - description: The war ID
+          example: 801
+          in: path
+          name: war_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: War season infos. Contains planet information, home worlds, capital infos and permanent planet effects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarSeasonInfo'
+
+  /WarSeason/{war_id}/Status:
+    get:
+      parameters:
+        - description: The war ID
+          example: 801
+          in: path
+          name: war_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: War season status. Contains joint operations, planet events, super earth war results, global events, active election policy effects, planet active effects, planet attacks, community targets and planet status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarSeasonStatus'
+
+  /v2/Assignment/War/{war_id}:
+    get:
+      parameters:
+        - description: The war ID
+          example: 801
+          in: path
+          name: war_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: War assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+components:
+  schemas:
+    PlanetInfo:
+      type: object
+      required:
+        - index
+        - settingsHash
+        - position
+        - waypoints
+        - sector
+        - maxHealth
+        - disabled
+        - initialOwner
+      properties:
+        index:
+          type: integer
+          format: int32
+        settingsHash:
+          type: integer
+          format: int64
+          description: Purpose unknown
+        position:
+          type: object
+          required:
+            - x
+            - y
+          properties:
+            x:
+              type: number
+              format: float
+            y:
+              type: number
+              format: float
+        waypoints:
+          type: array
+          items:
+            type: integer
+            format: int32
+          description: Planet indexes that can be reached from this planet
+        sector:
+          type: integer
+          format: int32
+          description: Planet sector index
+        maxHealth:
+          type: integer
+          format: int32
+          description: Maximum health of the planet
+        disabled:
+          type: boolean
+          description: Purpose unknown, always false, might be used for future events
+        initialOwner:
+          $ref: '#/components/schemas/FactionEnum'
+
+    WarSeasonInfo:
+      type: object
+      required:
+        - warId
+        - startDate
+        - endDate
+        - minimumClientVersion
+        - planetInfos
+        - homeWorlds
+        - capitalInfos
+        - permanentPlanetEffects
+      properties:
+        warId:
+          type: integer
+          format: int32
+        startDate:
+          type: integer
+          format: int64
+        endDate:
+          type: integer
+          format: int64
+        minimumClientVersion:
+          type: string
+          format: semver
+          description: Minimum client version. Does not seems to match client version. Follows semver format.
+        planetInfos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetInfo'
+        homeWorlds:
+          type: array
+          items:
+            type: object
+            required:
+              - race
+              - planetIndices
+            properties:
+              race:
+                $ref: '#/components/schemas/FactionEnum'
+              planetIndices:
+                type: array
+                items:
+                  type: integer
+                  format: int32
+          capitalInfos:
+            type: array
+            items:
+              type: object
+              properties: {}
+              description: Placeholder object from WarSeasonInfo, purpose unknown. Empty ATM.
+          permanentPlanetEffects:
+            type: array
+            items:
+              type: object
+              properties: {}
+              description: Placeholder object from WarSeasonInfo, purpose unknown. Empty ATM.
+    BattleStatistics:
+      type: object
+      required:
+        - missionsWon
+        - missionsLost
+        - missionTime
+        - bugKills
+        - automatonKills
+        - illuminateKills
+        - bulletsFired
+        - bulletsHit
+        - timePlayed
+        - deaths
+        - revives
+        - friendlies
+        - missionSuccessRate
+        - accurracy
+      properties:
+        missionsWon:
+          type: integer
+          format: int64
+        missionsLost:
+          type: integer
+          format: int64
+        missionTime:
+          type: integer
+          format: int64
+        bugKills:
+          type: integer
+          format: int64
+        automatonKills:
+          type: integer
+          format: int64
+        illuminateKills:
+          type: integer
+          format: int64
+        bulletsFired:
+          description: Total bullet fired. Values does not match with bulletHit statistics, as sometimes there are more bullet hits than fired.
+          type: integer
+          format: int64
+        bulletsHit:
+          description: Total bullet hits. Values does not match with bulletFired statistics, as sometimes there are more bullet hits than fired.
+          type: integer
+          format: int64
+        timePlayed:
+          type: integer
+          format: int64
+          description: cumulative number of seconds spent on mission
+        deaths:
+          type: integer
+          description: Cumulative number of helldivers deaths on duty
+          format: int64
+        revives:
+          description: Number of revive stratagems used. Unclear as if whole teams revive after a wipe are counted.
+          type: integer
+          format: int64
+        friendlies:
+          type: integer
+          description: Number of friendly kills ? Unsure.
+          format: int64
+        missionSuccessRate:
+          type: integer
+          description: Rate of mission success. Range from 0 to 100.
+          format: int64
+        accurracy:
+          type: integer
+          format: int64
+          description: "Player accuracy, ranges from 0 to 100. Typo is intentional, it is present in the upstream API"
+          x-go-name: Accuracy # Fix typo
+
+    WarStatistics:
+      type: object
+      required:
+        - galaxy_stats
+        - planets_stats
+      properties:
+        galaxy_stats:
+          $ref: '#/components/schemas/BattleStatistics'
+        planets_stats:
+          type: array
+          items:
+            allOf:
+              - type: object
+                required:
+                  - planetIndex
+                properties:
+                  planetIndex:
+                    type: integer
+                    format: int32
+              - $ref: '#/components/schemas/BattleStatistics'
+
+    AssignmentType:
+      type: integer
+      description: |
+        Assignment type, all values are not known yet
+        Guesses:
+          * 4: Major order
+      enum:
+        - 4
+      x-enumNames:
+        - MAJOR_ORDER
+    AssignmentTaskType:
+      type: integer
+      description: |
+        Assignment task type, all values are not known yet
+        Guesses:
+          * 11: Liberate planet
+      enum:
+        - 11
+      x-enumNames:
+      - LIBERATE_PLANET
+
+    AssignmentTask:
+      type: object
+      required:
+        - type
+        - values
+        - valuesTypes
+      properties:
+        type:
+          $ref: '#/components/schemas/AssignmentTaskType'
+        values:
+          type: array
+          items:
+            type: integer
+            format: int32
+        valuesTypes:
+          type: array
+          items:
+            type: integer
+            format: int32
+
+    AssignmentRewardType:
+      type: integer
+      format: int32
+      description: |
+        Type of currency / reward granted upon assignment completion
+        Hypothesis:
+          * 1: Warbond medal
+      enum:
+        - 1
+      x-enumNames:
+        - WAR_BOND
+
+    AssignmentReward:
+      type: object
+      description: Reward granted upon assignment successful completion
+      required:
+        - type
+        - id32
+        - amount
+      properties:
+        type:
+          $ref: '#/components/schemas/AssignmentRewardType'
+        id32:
+          type: integer
+          format: int32
+          description: internal identifier, purpose unknown
+        amount:
+          type: integer
+          format: int32
+          description: the amount of reward type granted upon success
+
+    Assignment:
+      type: object
+      required:
+        - id
+        - progress
+        - expireIn
+        - setting
+      properties:
+        id:
+          type: integer
+          format: int64
+        progress:
+          type: array
+          items:
+            type: integer
+            format: int32
+            description: purpose and bounds unknown
+        expireIn:
+          type: integer
+          format: int64
+          description: Seconds until assignment expiration
+        setting:
+          type: object
+          required:
+            - type
+            - overrideTitle
+            - overrideBrief
+            - taskDescription
+            - tasks
+            - reward
+            - flags
+          properties:
+            type:
+              $ref: '#/components/schemas/AssignmentType'
+            overrideTitle:
+              type: string
+              description: Assignment type title
+              examples: ["MAJOR ORDER"]
+            overrideBrief:
+              type: string
+              description: Assignment description
+              examples: ['We have discovered Automaton plans for something called "The Reclamation." Capturing their deep-space comms array on Troost may reveal critical intel about their plans.']
+            taskDescription:
+              type: string
+              examples: ["Liberate Troost."]
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/AssignmentTask'
+            reward:
+              $ref: '#/components/schemas/AssignmentReward'
+            flags:
+              type: integer
+              format: int32
+              description: Purpose unknown
+
+
+
+    NewsEntry:
+      type: object
+      required:
+        - id
+        - published
+        - tagIds
+        - type
+        - message
+      properties:
+        id:
+          type: integer
+          format: int32
+          examples: [2797]
+        published:
+          type: integer
+          format: int64
+          examples: [2414563]
+          description: Timestamp delta from war start ?
+        tagIds:
+          type: array
+          items:
+            description: Format and purpose unknown
+        type:
+          type: integer
+          format: int32
+          description: Always 0, purpose unknown
+        message:
+          type: string
+          description: Event message
+          examples: ['NEW MAJOR ORDER\nActivate Terminid Control System']
+    News:
+      type: array
+      items:
+        $ref: '#/components/schemas/NewsEntry'
+    EventTypeEnum:
+      description: Placeholder enum, values are not known
+      type: integer
+      enum:
+        - 1
+    FactionEnum:
+      description: |
+        Identifier for a given Faction.
+        * `1`: Super Earth
+        * `2`: Terminids
+        * `3`: Automatons
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+      x-enumNames:
+        - SUPER_EARTH
+        - TERMINIDS
+        - AUTOMATONS
+    JointOperation:
+      type: object
+      required:
+        - id
+        - planetIndex
+        - hqNodeIndex
+      properties:
+        id:
+          type: integer
+          format: int32
+          examples: [4332]
+        planetIndex:
+          type: integer
+          format: int32
+          examples: [34]
+        hqNodeIndex:
+          type: integer
+          format: int32
+          examples: [0]
+          description: Purpose unknown
+    PlanetEvent:
+      type: object
+      required:
+        - id
+        - planetIndex
+        - eventType
+        - race
+        - health
+        - maxHealth
+        - startTime
+        - expireTime
+        - campaignId
+        - jointOperationIds
+      properties:
+        id:
+          type: integer
+          format: int32
+          examples: [4332]
+        planetIndex:
+          type: integer
+          format: int32
+          examples: [34]
+        eventType:
+          $ref: '#/components/schemas/EventTypeEnum'
+        race:
+          $ref: '#/components/schemas/FactionEnum'
+        health:
+          type: integer
+          format: int32
+          examples: [198442]
+          description: Current health of the planet for this event
+        maxHealth:
+          type: integer
+          format: int32
+          examples: [400000]
+          description: Current health of the planet for this event
+        startTime:
+          type: integer
+          format: int64
+          examples: [2414563]
+          description: Timestamp delta from war start ?
+        expireTime:
+          type: integer
+          format: int64
+          examples: [2414563]
+          description: Timestamp delta from war start ?
+        campaignId:
+          type: integer
+          format: int32
+          examples: [50038]
+        jointOperationIds:
+          type: array
+          description: Links with the id present in objects from the "jointOperation" field in the response root.
+          items:
+            type: integer
+            format: int32
+    WarSeasonStatus:
+      type: object
+      required:
+        - warId
+        - time
+        - impactMultiplier
+        - storyBeatId32
+        - jointOperations
+        - planetEvents
+        - superEarthWarResults
+        - globalEvents
+        - activeElectionPolicyEffects
+        - planetActiveEffects
+        - planetAttacks
+        - communityTargets
+        - planetStatus
+      properties:
+        warId:
+          type: integer
+          format: int32
+          examples: [801]
+          description: The war identifier
+        time:
+          type: integer
+          format: int64
+          examples: [3998790]
+          description: Current timestamp from the beginning of the war ? Seems to incease with a 10 step.
+        impactMultiplier:
+          type: number
+          format: float
+          examples: [0.023616767]
+          description: Purpose unknown
+        storyBeatId32:
+          type: integer
+          # Format is int64 instead of int32 because openapi does not support defining generic unsigned integers
+          # The API returns a number higher than 2^31, so we need to use int64
+          format: int64
+          examples: [2622322357]
+          description: Purpose unknown
+        jointOperations:
+          type: array
+          items:
+            $ref: '#/components/schemas/JointOperation'
+        planetEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetEvent'
+        superEarthWarResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/SuperEarthWarResult'
+        globalEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalEvent'
+        activeElectionPolicyEffects:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActiveElectionPolicyEffect'
+        planetActiveEffects:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetActiveEffect'
+        planetAttacks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetAttack'
+        communityTargets:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommunityTarget'
+        planetStatus:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanetStatus'
+
+
+    PlanetStatus:
+      type: object
+      required:
+        - index
+        - owner
+        - health
+        - regenPerSecond
+        - players
+      properties:
+        index:
+          type: integer
+          format: int32
+          examples: [34]
+          description: The planet identifier, used as a reference in other resources.
+        owner:
+          $ref: '#/components/schemas/FactionEnum'
+        health:
+          type: integer
+          format: int32
+          examples: [833112, 1000000]
+          description: Current health of the planet, seems to be capped at 1000000 for all the planets.
+        regenPerSecond:
+          type: number
+          format: float
+          examples: [4.1666665, 2.777778, 0, 1388.8889]
+          description: |
+            Health regeneration of the planet.
+            Notes:
+            * Most human planets seems to have a regeneration rate of 1388.8889 when no activity has occurred for a while.
+            * Hypothesis: planet regeneration rate go up based of the time spent at peace
+            * At time of writing, only the 4 values present in examples are used on all planets ([4.1666665, 2.777778, 0, 1388.8889])
+        players:
+          type: integer
+          format: int32
+          description: Currently active helldivers on this planet
+
+    PlanetAttack:
+      type: object
+      description: Edge in a directed graph. Represent supply lanes for available planet liberations.
+      required:
+        - source
+        - destination
+      properties:
+        source:
+          type: integer
+          format: int32
+          description: ID of a planet
+        destination:
+          type: integer
+          format: int32
+          description: ID of a planet
+    CommunityTarget:
+      type: object
+      properties: {}
+      description: Placeholder object from WarSeasonStatus, purpose unknown
+    SuperEarthWarResult:
+      type: object
+      properties: {}
+      description: Placeholder object from WarSeasonStatus, purpose unknown
+    PlanetActiveEffect:
+      type: object
+      properties: {}
+      description: Placeholder object from WarSeasonStatus, purpose unknown
+    ActiveElectionPolicyEffect:
+      type: object
+      properties: {}
+      description: Placeholder object from WarSeasonStatus, purpose unknown
+    GlobalEvent:
+      type: object
+      properties: {}
+      description: Placeholder object from WarSeasonStatus, purpose unknown
+
+

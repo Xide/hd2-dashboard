@@ -1,0 +1,33 @@
+services:
+  exporter:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - HDE_EXPOSE_ADDRESS=:8080
+    restart: always
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./utils/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+  grafana:
+      image: grafana/grafana-oss
+      ports:
+      - 3000:3000
+      volumes:
+      # - ./utils/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./utils/dashboards:/var/lib/grafana/dashboards:ro
+      - ./utils/prom-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      environment:
+        - "GF_AUTH_DISABLE_LOGIN_FORM=true"
+        - "GF_AUTH_ANONYMOUS_ENABLED=true"
+        - "GF_AUTH_ANONYMOUS_ORG_ROLE=Admin"
+        - "GF_INSTALL_PLUGINS=grafana-polystat-panel"
+
+volumes:
+  prometheus-data: {}
