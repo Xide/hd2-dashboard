@@ -1,4 +1,4 @@
-module github.com/Xide/helldivers2-prometheus-collector
+module github.com/Xide/helldivers2-dashboard
 
 go 1.22.0
 

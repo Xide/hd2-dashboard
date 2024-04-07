@@ -16,6 +16,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
+  "github.com/Xide/helldivers2-dashboard/pkg/client"
 )
 
 var planetNames = map[int32]string{}
@@ -207,11 +209,11 @@ var (
 // * War statistics (e.g. missions won, time played, etc.)
 // Returns this information as 3 structs
 // Fills prometheus histograms for HTTP queries
-func fetch(client ClientWithResponsesInterface) (*WarSeasonStatus, *WarSeasonInfo, *WarStatistics, error) {
+func fetch(cl client.ClientWithResponsesInterface) (*client.WarSeasonStatus, *client.WarSeasonInfo, *client.WarStatistics, error) {
   ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
   defer cancel()
   tStart := time.Now()
-  warStatus, err := client.GetWarSeasonWarIdStatusWithResponse(ctx, 801)
+  warStatus, err := cl.GetWarSeasonWarIdStatusWithResponse(ctx, 801)
   tEnd := time.Now()
   apiRequestDuration.WithLabelValues("war_status").Observe(tEnd.Sub(tStart).Seconds())
   if err != nil {
@@ -227,7 +229,7 @@ func fetch(client ClientWithResponsesInterface) (*WarSeasonStatus, *WarSeasonInf
   warStatusRes := warStatus.JSON200
 
   tStart = time.Now()
-  warInfo, err := client.GetWarSeasonWarIdWarInfoWithResponse(ctx, 801)
+  warInfo, err := cl.GetWarSeasonWarIdWarInfoWithResponse(ctx, 801)
   tEnd = time.Now()
   apiRequestDuration.WithLabelValues("war_info").Observe(tEnd.Sub(tStart).Seconds())
   if err != nil {
@@ -243,7 +245,7 @@ func fetch(client ClientWithResponsesInterface) (*WarSeasonStatus, *WarSeasonInf
   warInfoRes := warInfo.JSON200
 
   tStart = time.Now()
-  warStats, err := client.GetStatsWarWarIdSummaryWithResponse(ctx, 801)
+  warStats, err := cl.GetStatsWarWarIdSummaryWithResponse(ctx, 801)
   tEnd = time.Now()
   apiRequestDuration.WithLabelValues("war_stats").Observe(tEnd.Sub(tStart).Seconds())
   if err != nil {
@@ -264,8 +266,8 @@ func fetch(client ClientWithResponsesInterface) (*WarSeasonStatus, *WarSeasonInf
 // Scrape the API and fill the prometheus metrics
 // Returns an error if the API call fails
 // called every 30 seconds
-func scrape(client ClientWithResponsesInterface) error {
-  status, infos, stats, err := fetch(client)
+func scrape(cl client.ClientWithResponsesInterface) error {
+  status, infos, stats, err := fetch(cl)
   if err != nil {
     return err
   }
@@ -332,14 +334,14 @@ func scrape(client ClientWithResponsesInterface) error {
 // Start the scraper, which will scrape the API every 30 seconds
 // Started as a goroutine
 func startScraper() {
-  client, err := NewClientWithResponses(viper.GetString("api_url"))
+  cl, err := client.NewClientWithResponses(viper.GetString("api_url"))
   if err != nil {
     panic(err)
   }
   slog.Info("Starting scraper")
   for {
     slog.Info("Performing scrape")
-    err = scrape(client)
+    err = scrape(cl)
     if err != nil {
       fmt.Println("Error scraping", err)
     }

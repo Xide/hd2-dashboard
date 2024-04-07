@@ -1,6 +1,10 @@
 services:
   exporter:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        COMMAND: "exporter"
     ports:
       - "8080:8080"
     environment:
