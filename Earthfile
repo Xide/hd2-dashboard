@@ -15,6 +15,10 @@ json-data:
   RUN curl https://raw.githubusercontent.com/helldivers-2/json/master/planets.json -o data/planets.json
   SAVE ARTIFACT data AS LOCAL data
 
+build-sync:
+  FROM DOCKERFILE --build-arg COMMAND=sync .
+  SAVE IMAGE sigbilly/hde_sync:latest
+
 build-exporter:
   FROM DOCKERFILE --build-arg COMMAND=exporter .
   SAVE IMAGE sigbilly/hde_exporter:latest
